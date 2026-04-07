@@ -26,14 +26,14 @@ graph LR
 
 The adapter creates six model elements:
 
-| Model Element | Name | Purpose |
-| --- | --- | --- |
-| [Battery](../model-layer/elements/battery.md) | `{name}` | Physical EV battery with SOC tracking |
-| [Connection](../model-layer/connections/connection.md) | `{name}:connection` | Home charging path (EV ↔ network), active when connected |
-| [Battery](../model-layer/elements/battery.md) | `{name}:trip` | Trip energy sink, capacity set from calendar events |
-| [Connection](../model-layer/connections/connection.md) | `{name}:trip_connection` | EV battery → trip battery, active when disconnected |
-| [Node](../model-layer/elements/node.md) | `{name}:public_grid` | Source-only node representing public charging availability |
-| [Connection](../model-layer/connections/connection.md) | `{name}:public_connection` | Public grid → trip battery with optional pricing |
+| Model Element                                          | Name                       | Purpose                                                    |
+| ------------------------------------------------------ | -------------------------- | ---------------------------------------------------------- |
+| [Battery](../model-layer/elements/battery.md)          | `{name}`                   | Physical EV battery with SOC tracking                      |
+| [Connection](../model-layer/connections/connection.md) | `{name}:connection`        | Home charging path (EV ↔ network), active when connected   |
+| [Battery](../model-layer/elements/battery.md)          | `{name}:trip`              | Trip energy sink, capacity set from calendar events        |
+| [Connection](../model-layer/connections/connection.md) | `{name}:trip_connection`   | EV battery → trip battery, active when disconnected        |
+| [Node](../model-layer/elements/node.md)                | `{name}:public_grid`       | Source-only node representing public charging availability |
+| [Connection](../model-layer/connections/connection.md) | `{name}:public_connection` | Public grid → trip battery with optional pricing           |
 
 ## Architecture details
 
@@ -86,41 +86,41 @@ The optimizer selects the cheaper option based on current and forecast prices.
 
 The EV element creates a single Home Assistant device:
 
-| Device | Name | Created when | Purpose |
-| --- | --- | --- | --- |
-| EV | `{name}` | Always | Power, energy, SOC, trip, shadow prices |
+| Device | Name     | Created when | Purpose                                 |
+| ------ | -------- | ------------ | --------------------------------------- |
+| EV     | `{name}` | Always       | Power, energy, SOC, trip, shadow prices |
 
 ## Parameter mapping
 
-| User configuration | Model element(s) | Model parameter | Notes |
-| --- | --- | --- | --- |
-| `capacity` | Battery `{name}` | `capacity` | kWh, time-series boundary array |
-| `current_soc` | Battery `{name}` | `initial_charge` | Converted from percentage to kWh |
-| `max_charge_rate` | Connection `{name}:connection` | Power limit segment | Masked by connected flag |
-| `max_discharge_rate` | Connection `{name}:connection` | Power limit segment | Masked by connected flag |
-| `energy_per_distance` | Trip capacity calculation | Multiplied by distance | kWh/distance unit |
-| `public_charging_price` | Connection `{name}:public_connection` | Pricing segment | Optional, $/kWh |
-| `efficiency_source_target` | Connection `{name}:connection` | Efficiency segment | Discharge direction |
-| `efficiency_target_source` | Connection `{name}:connection` | Efficiency segment | Charge direction |
-| `max_power_source_target` | Connection `{name}:connection` | Power limit segment | Combined with discharge rate |
-| `max_power_target_source` | Connection `{name}:connection` | Power limit segment | Combined with charge rate |
+| User configuration         | Model element(s)                      | Model parameter        | Notes                            |
+| -------------------------- | ------------------------------------- | ---------------------- | -------------------------------- |
+| `capacity`                 | Battery `{name}`                      | `capacity`             | kWh, time-series boundary array  |
+| `current_soc`              | Battery `{name}`                      | `initial_charge`       | Converted from percentage to kWh |
+| `max_charge_rate`          | Connection `{name}:connection`        | Power limit segment    | Masked by connected flag         |
+| `max_discharge_rate`       | Connection `{name}:connection`        | Power limit segment    | Masked by connected flag         |
+| `energy_per_distance`      | Trip capacity calculation             | Multiplied by distance | kWh/distance unit                |
+| `public_charging_price`    | Connection `{name}:public_connection` | Pricing segment        | Optional, \$/kWh                 |
+| `efficiency_source_target` | Connection `{name}:connection`        | Efficiency segment     | Discharge direction              |
+| `efficiency_target_source` | Connection `{name}:connection`        | Efficiency segment     | Charge direction                 |
+| `max_power_source_target`  | Connection `{name}:connection`        | Power limit segment    | Combined with discharge rate     |
+| `max_power_target_source`  | Connection `{name}:connection`        | Power limit segment    | Combined with charge rate        |
 
 ## Output mapping
 
 The adapter maps model outputs to EV-specific sensor names:
 
-| Model output | Sensor name | Description |
-| --- | --- | --- |
-| `BATTERY_POWER_CHARGE` | `power_charge` | Charge power |
-| `BATTERY_POWER_DISCHARGE` | `power_discharge` | Discharge power |
-| Calculated | `power_active` | Net power (discharge − charge) |
-| `BATTERY_ENERGY_STORED` | `energy_stored` | Energy in EV battery |
-| Calculated | `state_of_charge` | SOC percentage |
-| `BATTERY_POWER_BALANCE` | `power_balance` | Power balance shadow price |
-| Trip `BATTERY_ENERGY_STORED` | `trip_energy_required` | Trip energy requirement |
-| `CONNECTION_POWER_SOURCE_TARGET` | `public_charge_power` | Public charging power |
-| Power limit shadow | `power_max_charge_price` | Charge limit shadow price |
-| Power limit shadow | `power_max_discharge_price` | Discharge limit shadow price |
+| Model output                     | Sensor name                 | Description                    |
+| -------------------------------- | --------------------------- | ------------------------------ |
+| `BATTERY_POWER_CHARGE`           | `power_charge`              | Charge power                   |
+| `BATTERY_POWER_DISCHARGE`        | `power_discharge`           | Discharge power                |
+| Calculated                       | `power_active`              | Net power (discharge − charge) |
+| `BATTERY_ENERGY_STORED`          | `energy_stored`             | Energy in EV battery           |
+| Calculated                       | `state_of_charge`           | SOC percentage                 |
+| `BATTERY_POWER_BALANCE`          | `power_balance`             | Power balance shadow price     |
+| Trip `BATTERY_ENERGY_STORED`     | `trip_energy_required`      | Trip energy requirement        |
+| `CONNECTION_POWER_SOURCE_TARGET` | `public_charge_power`       | Public charging power          |
+| Power limit shadow               | `power_max_charge_price`    | Charge limit shadow price      |
+| Power limit shadow               | `power_max_discharge_price` | Discharge limit shadow price   |
 
 See [EV Configuration](../../user-guide/elements/ev.md#sensors-created) for complete sensor documentation.
 
@@ -128,7 +128,7 @@ See [EV Configuration](../../user-guide/elements/ev.md#sensors-created) for comp
 
 <div class="grid cards" markdown>
 
--   :material-file-document:{ .lg .middle } **EV configuration**
+- :material-file-document:{ .lg .middle } **EV configuration**
 
     ---
 
@@ -136,7 +136,7 @@ See [EV Configuration](../../user-guide/elements/ev.md#sensors-created) for comp
 
     [:material-arrow-right: EV configuration](../../user-guide/elements/ev.md)
 
--   :material-battery-charging:{ .lg .middle } **Battery model**
+- :material-battery-charging:{ .lg .middle } **Battery model**
 
     ---
 
@@ -144,7 +144,7 @@ See [EV Configuration](../../user-guide/elements/ev.md#sensors-created) for comp
 
     [:material-arrow-right: Battery model](../model-layer/elements/battery.md)
 
--   :material-connection:{ .lg .middle } **Connection model**
+- :material-connection:{ .lg .middle } **Connection model**
 
     ---
 

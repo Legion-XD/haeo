@@ -142,9 +142,9 @@ Navigate to **Settings → Devices & Services → HAEO** to view the complete sy
 
 ### Expected Device Hierarchy
 
-| Element       | Type     | Key Sensors                                            |
-| ------------- | -------- | ------------------------------------------------------ |
-| Commuter EV   | EV       | Charge power, energy stored, SOC, trip energy required |
+| Element     | Type | Key Sensors                                            |
+| ----------- | ---- | ------------------------------------------------------ |
+| Commuter EV | EV   | Charge power, energy stored, SOC, trip energy required |
 
 The EV element adds to the existing base system elements (Inverter, Battery, Solar, Grid, Load).
 

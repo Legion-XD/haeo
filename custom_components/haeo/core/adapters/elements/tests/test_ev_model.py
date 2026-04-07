@@ -288,9 +288,7 @@ OUTPUTS_CASES: Sequence[OutputsCase] = [
                 model_battery.BATTERY_POWER_DISCHARGE: OutputData(
                     type=OutputType.POWER_FLOW, unit="kW", values=(0.0,), direction="+"
                 ),
-                model_battery.BATTERY_ENERGY_STORED: OutputData(
-                    type=OutputType.ENERGY, unit="kWh", values=(53.0,)
-                ),
+                model_battery.BATTERY_ENERGY_STORED: OutputData(type=OutputType.ENERGY, unit="kWh", values=(53.0,)),
                 model_battery.BATTERY_POWER_BALANCE: OutputData(
                     type=OutputType.SHADOW_PRICE, unit="$/kWh", values=(0.12,)
                 ),
@@ -308,9 +306,7 @@ OUTPUTS_CASES: Sequence[OutputsCase] = [
                 },
             },
             "my_ev:trip": {
-                model_battery.BATTERY_ENERGY_STORED: OutputData(
-                    type=OutputType.ENERGY, unit="kWh", values=(0.0,)
-                ),
+                model_battery.BATTERY_ENERGY_STORED: OutputData(type=OutputType.ENERGY, unit="kWh", values=(0.0,)),
             },
             "my_ev:public_connection": {
                 CONNECTION_POWER_SOURCE_TARGET: OutputData(
@@ -321,35 +317,21 @@ OUTPUTS_CASES: Sequence[OutputsCase] = [
         "periods": np.array([1.0]),
         "outputs": {
             EV_DEVICE_EV: {
-                EV_POWER_CHARGE: OutputData(
-                    type=OutputType.POWER_FLOW, unit="kW", values=(5.0,), direction="-"
-                ),
-                EV_POWER_DISCHARGE: OutputData(
-                    type=OutputType.POWER_FLOW, unit="kW", values=(0.0,), direction="+"
-                ),
+                EV_POWER_CHARGE: OutputData(type=OutputType.POWER_FLOW, unit="kW", values=(5.0,), direction="-"),
+                EV_POWER_DISCHARGE: OutputData(type=OutputType.POWER_FLOW, unit="kW", values=(0.0,), direction="+"),
                 EV_ENERGY_STORED: OutputData(type=OutputType.ENERGY, unit="kWh", values=(53.0,)),
-                EV_POWER_ACTIVE: OutputData(
-                    type=OutputType.POWER, unit="kW", values=(-5.0,), direction=None
-                ),
+                EV_POWER_ACTIVE: OutputData(type=OutputType.POWER, unit="kW", values=(-5.0,), direction=None),
                 EV_STATE_OF_CHARGE: OutputData(
                     type=OutputType.STATE_OF_CHARGE,
                     unit="%",
                     values=(pytest.approx(88.333, rel=1e-2),),
                     direction=None,
                 ),
-                EV_POWER_BALANCE: OutputData(
-                    type=OutputType.SHADOW_PRICE, unit="$/kWh", values=(0.12,)
-                ),
+                EV_POWER_BALANCE: OutputData(type=OutputType.SHADOW_PRICE, unit="$/kWh", values=(0.12,)),
                 EV_TRIP_ENERGY_REQUIRED: OutputData(type=OutputType.ENERGY, unit="kWh", values=(0.0,)),
-                EV_PUBLIC_CHARGE_POWER: OutputData(
-                    type=OutputType.POWER, unit="kW", values=(0.0,), direction="+"
-                ),
-                EV_POWER_MAX_DISCHARGE_PRICE: OutputData(
-                    type=OutputType.SHADOW_PRICE, unit="$/kW", values=(0.02,)
-                ),
-                EV_POWER_MAX_CHARGE_PRICE: OutputData(
-                    type=OutputType.SHADOW_PRICE, unit="$/kW", values=(0.01,)
-                ),
+                EV_PUBLIC_CHARGE_POWER: OutputData(type=OutputType.POWER, unit="kW", values=(0.0,), direction="+"),
+                EV_POWER_MAX_DISCHARGE_PRICE: OutputData(type=OutputType.SHADOW_PRICE, unit="$/kW", values=(0.02,)),
+                EV_POWER_MAX_CHARGE_PRICE: OutputData(type=OutputType.SHADOW_PRICE, unit="$/kW", values=(0.01,)),
             }
         },
     },

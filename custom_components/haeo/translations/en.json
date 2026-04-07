@@ -284,11 +284,17 @@
             },
             "common": { "data": { "connection": "Connection", "name": "EV Name" }, "name": "Common settings" },
             "efficiency": {
-              "data": { "efficiency_source_target": "Discharge efficiency", "efficiency_target_source": "Charge efficiency" },
+              "data": {
+                "efficiency_source_target": "Discharge efficiency",
+                "efficiency_target_source": "Charge efficiency"
+              },
               "name": "Efficiency"
             },
             "power_limits": {
-              "data": { "max_power_source_target": "Max discharge power", "max_power_target_source": "Max charge power" },
+              "data": {
+                "max_power_source_target": "Max discharge power",
+                "max_power_target_source": "Max charge power"
+              },
               "name": "Power limits"
             },
             "public_charging": {
@@ -296,7 +302,11 @@
               "name": "Public charging"
             },
             "vehicle": {
-              "data": { "capacity": "Battery capacity", "current_soc": "Current state of charge", "energy_per_distance": "Energy per distance" },
+              "data": {
+                "capacity": "Battery capacity",
+                "current_soc": "Current state of charge",
+                "energy_per_distance": "Energy per distance"
+              },
               "name": "Vehicle"
             }
           }

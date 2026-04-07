@@ -548,9 +548,7 @@ class HAPage:
                 picker.click()
 
                 # Entity picker opens an inline dropdown with a search box
-                combo_selector = (
-                    "vaadin-combo-box-overlay input, ha-combo-box input[type='search']"
-                )
+                combo_selector = "vaadin-combo-box-overlay input, ha-combo-box input[type='search']"
                 search_input = self.page.locator(combo_selector).first
                 if not search_input.is_visible(timeout=1000):
                     # Fallback: find the search textbox that appeared
@@ -731,9 +729,7 @@ class HAPage:
         """
         add_btn = self.page.locator("ha-fab").get_by_role("button", name="Add integration")
         if not add_btn.is_visible(timeout=1000):
-            add_btn = self.page.locator("ha-button").get_by_role(
-                "button", name="Add integration"
-            )
+            add_btn = self.page.locator("ha-button").get_by_role("button", name="Add integration")
         add_btn.wait_for(state="visible", timeout=SEARCH_TIMEOUT)
 
         ctx = ScreenshotContext.current()
@@ -821,10 +817,7 @@ class HAPage:
                     self._set_event_recurrence(dialog, recurrence)
 
                 # Save the event
-                save_btn = dialog.locator(
-                    "mwc-button[slot='primaryAction'], "
-                    "ha-button[slot='primaryAction']"
-                ).first
+                save_btn = dialog.locator("mwc-button[slot='primaryAction'], ha-button[slot='primaryAction']").first
                 if not save_btn.is_visible(timeout=1000):
                     save_btn = dialog.get_by_text("Add event").last
                 # Use the inner button for proper border-radius highlighting
@@ -850,10 +843,7 @@ class HAPage:
             self._fill_event_times(dialog, start_time, end_time)
             if recurrence:
                 self._set_event_recurrence(dialog, recurrence)
-            save_btn = dialog.locator(
-                "mwc-button[slot='primaryAction'], "
-                "ha-button[slot='primaryAction']"
-            ).first
+            save_btn = dialog.locator("mwc-button[slot='primaryAction'], ha-button[slot='primaryAction']").first
             if not save_btn.is_visible(timeout=1000):
                 save_btn = dialog.get_by_text("Add event").last
             save_btn.click()
@@ -883,9 +873,7 @@ class HAPage:
             if all_day_toggle.is_visible(timeout=1000):
                 # Check if the toggle is currently ON by inspecting the switch state
                 switch = all_day_toggle.locator("ha-switch")
-                is_checked = switch.evaluate(
-                    "(el) => el.checked === true"
-                ) if switch.is_visible(timeout=500) else False
+                is_checked = switch.evaluate("(el) => el.checked === true") if switch.is_visible(timeout=500) else False
                 if is_checked:
                     if ctx:
                         self._capture_with_indicator("all_day_toggle", all_day_toggle)
@@ -938,9 +926,7 @@ class HAPage:
             period_select = time_input.locator("mwc-select").first
         if period_select.is_visible(timeout=500):
             # Check current period by reading the selected value attribute
-            current_period = period_select.evaluate(
-                "(el) => el.value || el.textContent.trim().split('\\n')[0].trim()"
-            )
+            current_period = period_select.evaluate("(el) => el.value || el.textContent.trim().split('\\n')[0].trim()")
             if current_period != period:
                 period_select.click()
                 option = self.page.get_by_role("option", name=period)
@@ -948,9 +934,7 @@ class HAPage:
                     option = self.page.locator(f"mwc-list-item:text('{period}')").first
                 option.wait_for(state="visible", timeout=DEFAULT_TIMEOUT)
                 if ctx:
-                    self._capture_with_indicator(
-                        f"{screenshot_prefix}_period", option
-                    )
+                    self._capture_with_indicator(f"{screenshot_prefix}_period", option)
                 option.click()
                 self.page.wait_for_timeout(300)
 
@@ -983,9 +967,7 @@ class HAPage:
         # Look for recurrence dropdown/selector
         repeat_selector = dialog.locator("ha-select, select").filter(has_text="repeat")
         if not repeat_selector.is_visible(timeout=1000):
-            repeat_selector = dialog.get_by_role(
-                "combobox"
-            ).filter(has_text="Does not repeat")
+            repeat_selector = dialog.get_by_role("combobox").filter(has_text="Does not repeat")
         if not repeat_selector.is_visible(timeout=1000):
             repeat_selector = dialog.locator("text='Does not repeat'").first
 

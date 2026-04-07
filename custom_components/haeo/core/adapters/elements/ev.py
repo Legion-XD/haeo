@@ -284,9 +284,7 @@ class EvAdapter:
         )
 
         # Power balance shadow price
-        ev_outputs[EV_POWER_BALANCE] = expect_output_data(
-            battery_outputs[model_battery.BATTERY_POWER_BALANCE]
-        )
+        ev_outputs[EV_POWER_BALANCE] = expect_output_data(battery_outputs[model_battery.BATTERY_POWER_BALANCE])
 
         # Trip energy required (from trip battery energy stored)
         trip_energy = expect_output_data(trip_outputs[model_battery.BATTERY_ENERGY_STORED])

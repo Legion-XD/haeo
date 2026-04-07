@@ -29,6 +29,7 @@ _LOGGER = logging.getLogger(__name__)
 _DOCS_DIR = Path(__file__).parent.parent / "docs"
 
 _manifest_cache: dict[str, dict[str, object]] | None = None
+_manifest_mtimes: dict[Path, float] = {}
 
 
 def _load_manifests() -> dict[str, dict[str, object]]:
@@ -47,6 +48,8 @@ def _load_manifests() -> dict[str, dict[str, object]]:
         except (json.JSONDecodeError, OSError):
             _LOGGER.debug("Skipping invalid manifest: %s", manifest_path)
             continue
+
+        _manifest_mtimes[manifest_path] = manifest_path.stat().st_mtime
 
         viewport = data.get("viewport", {"width": 1280, "height": 800})
         blocks = data.get("blocks", [])
@@ -78,10 +81,21 @@ def _load_manifests() -> dict[str, dict[str, object]]:
     return index
 
 
+def _manifests_changed() -> bool:
+    """Check whether any manifest file has been added, removed, or modified."""
+    current_paths = set(_DOCS_DIR.rglob("manifest.json"))
+    cached_paths = set(_manifest_mtimes)
+
+    if current_paths != cached_paths:
+        return True
+
+    return any(p.stat().st_mtime != _manifest_mtimes[p] for p in current_paths if p.exists())
+
+
 def _find_block(source: str) -> dict[str, object] | None:
     """Find the manifest block matching this source code by content hash."""
     global _manifest_cache  # noqa: PLW0603
-    if _manifest_cache is None:
+    if _manifest_cache is None or _manifests_changed():
         _manifest_cache = _load_manifests()
     content_hash = hashlib.sha256(source.strip().encode()).hexdigest()[:16]
     return _manifest_cache.get(content_hash)
