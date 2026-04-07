@@ -29,6 +29,17 @@ from custom_components.haeo.core.schema.elements.battery import (
     CONF_MIN_CHARGE_PERCENTAGE,
 )
 from custom_components.haeo.core.schema.elements.element_type import ElementType
+from custom_components.haeo.core.schema.elements.ev import (
+    CONF_CALENDAR_ENTITY,
+    CONF_CONNECTED,
+    CONF_CURRENT_SOC,
+    CONF_ENERGY_PER_DISTANCE,
+    CONF_MAX_CHARGE_RATE,
+    CONF_MAX_DISCHARGE_RATE,
+    CONF_ODOMETER,
+    CONF_ODOMETER_AT_DISCONNECT,
+    CONF_PUBLIC_CHARGING_PRICE,
+)
 from custom_components.haeo.core.schema.sections import (
     CONF_FORECAST,
     CONF_MAX_POWER_SOURCE_TARGET,
@@ -491,6 +502,69 @@ def add_node(page: HAPage, *, name: str) -> None:
     page.close_element_dialog()
 
     _LOGGER.info("Node added: %s", name)
+
+
+@guide_step
+def add_ev(
+    page: HAPage,
+    *,
+    name: str,
+    connection: str,
+    calendar_entity: EntityInput,
+    connected: EntityInput,
+    odometer: EntityInput,
+    odometer_at_disconnect: EntityInput,
+    capacity: EntityInput | ConstantInput,
+    energy_per_distance: ConstantInput,
+    current_soc: EntityInput,
+    max_charge_rate: EntityInput | ConstantInput,
+    max_discharge_rate: EntityInput | ConstantInput | None = None,
+    public_charging_price: ConstantInput | None = None,
+) -> None:
+    """Add EV element to HAEO network."""
+    et = ElementType.EV
+    _LOGGER.info("Adding EV: %s", name)
+
+    page.click_button(_button_label(et))
+    page.wait_for_dialog(_dialog_title(et))
+
+    page.fill_textbox(_name_label(et), name)
+    page.select_combobox(_connection_label(et), connection)
+
+    # Fill trip entity selector fields
+    trip_label = _step_user(et)["data"]
+    page.select_entity(trip_label[CONF_CALENDAR_ENTITY], calendar_entity.search_term, calendar_entity.display_name)
+    page.select_entity(trip_label[CONF_CONNECTED], connected.search_term, connected.display_name)
+    page.select_entity(trip_label[CONF_ODOMETER], odometer.search_term, odometer.display_name)
+    page.select_entity(
+        trip_label[CONF_ODOMETER_AT_DISCONNECT],
+        odometer_at_disconnect.search_term,
+        odometer_at_disconnect.display_name,
+    )
+
+    # Build choose-selector fields in section order: vehicle → charging → public_charging
+    fields: dict[str, FieldInput] = {
+        CONF_CAPACITY: capacity,
+        CONF_ENERGY_PER_DISTANCE: energy_per_distance,
+        CONF_CURRENT_SOC: current_soc,
+        CONF_MAX_CHARGE_RATE: max_charge_rate,
+    }
+    if max_discharge_rate is not None:
+        fields[CONF_MAX_DISCHARGE_RATE] = max_discharge_rate
+    if public_charging_price is not None:
+        fields[CONF_PUBLIC_CHARGING_PRICE] = public_charging_price
+
+    _fill_element_fields(
+        page,
+        et,
+        fields,
+        collapsed_sections=frozenset({"public_charging", "power_limits", "efficiency"}),
+    )
+
+    page.submit()
+    page.close_element_dialog()
+
+    _LOGGER.info("EV added: %s", name)
 
 
 @guide_step

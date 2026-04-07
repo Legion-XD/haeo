@@ -229,7 +229,7 @@ class HAPage:
         """
         ctx = ScreenshotContext.current()
 
-        button = self.page.get_by_role("button", name=name)
+        button = self.page.get_by_role("button", name=name, exact=True)
         button.wait_for(state="visible", timeout=DEFAULT_TIMEOUT)
 
         if ctx:
@@ -497,6 +497,86 @@ class HAPage:
         result_item.wait_for(state="visible", timeout=SEARCH_TIMEOUT)
         result_item.click(timeout=DEFAULT_TIMEOUT)
         dialog.wait_for(state="hidden", timeout=DEFAULT_TIMEOUT)
+
+    # endregion
+
+    # region: Entity Pickers (standalone EntitySelector fields)
+
+    def select_entity(
+        self,
+        field_label: str,
+        search_term: str,
+        entity_name: str,
+    ) -> None:
+        """Select an entity from a standalone EntitySelector field.
+
+        EntitySelector fields render within shadow DOM of ha-form elements.
+        Clicking the ha-combo-box-item trigger opens an inline dropdown
+        with a search box and entity list (not a dialog).
+        """
+        label = self.page.locator(f"text='{field_label}'").first
+        label.wait_for(state="visible", timeout=DEFAULT_TIMEOUT)
+
+        # Find the ha-combo-box-item nearest to this label by bounding box
+        all_pickers = self.page.locator("ha-combo-box-item")
+        label_box = label.bounding_box()
+        picker = None
+
+        if label_box:
+            count = all_pickers.count()
+            best_y_diff = float("inf")
+            for i in range(count):
+                item = all_pickers.nth(i)
+                item_box = item.bounding_box()
+                if item_box and item_box["y"] >= label_box["y"]:
+                    y_diff = item_box["y"] - label_box["y"]
+                    if y_diff < best_y_diff:
+                        best_y_diff = y_diff
+                        picker = item
+
+        if picker is None:
+            msg = f"Could not find entity picker for '{field_label}'"
+            raise RuntimeError(msg)
+
+        ctx = ScreenshotContext.current()
+        if ctx:
+            with ctx.scope(f"select_entity_{field_label}"):
+                self._scroll_and_capture(picker)
+                self._capture_with_indicator("picker", picker)
+
+                picker.click()
+
+                # Entity picker opens an inline dropdown with a search box
+                combo_selector = (
+                    "vaadin-combo-box-overlay input, ha-combo-box input[type='search']"
+                )
+                search_input = self.page.locator(combo_selector).first
+                if not search_input.is_visible(timeout=1000):
+                    # Fallback: find the search textbox that appeared
+                    search_input = self.page.get_by_role("textbox", name="Search")
+                search_input.wait_for(state="visible", timeout=DEFAULT_TIMEOUT)
+                self._capture_with_indicator("search_box", search_input)
+
+                search_input.fill(search_term)
+
+                result_item = self.page.locator(f"ha-combo-box-item:has-text('{entity_name}')").first
+                if not result_item.is_visible(timeout=1000):
+                    result_item = self.page.locator(f":text('{entity_name}')").first
+                result_item.wait_for(state="visible", timeout=SEARCH_TIMEOUT)
+                self._capture("search_results")
+                self._capture_with_indicator("select", result_item)
+
+                result_item.click(timeout=DEFAULT_TIMEOUT)
+                self.page.wait_for_timeout(500)
+                self._capture("selected")
+        else:
+            picker.click()
+            search_input = self.page.get_by_role("textbox", name="Search")
+            search_input.wait_for(state="visible", timeout=DEFAULT_TIMEOUT)
+            search_input.fill(search_term)
+            result_item = self.page.locator(f":text('{entity_name}')").first
+            result_item.wait_for(state="visible", timeout=SEARCH_TIMEOUT)
+            result_item.click(timeout=DEFAULT_TIMEOUT)
 
     # endregion
 

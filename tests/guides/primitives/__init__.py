@@ -23,6 +23,7 @@ from tests.guides.primitives.haeo import (
     ConstantInput,
     EntityInput,
     add_battery,
+    add_ev,
     add_grid,
     add_integration,
     add_inverter,
@@ -43,6 +44,7 @@ __all__ = [
     "ScreenshotContext",
     # HAEO element primitives
     "add_battery",
+    "add_ev",
     "add_grid",
     "add_integration",
     "add_inverter",
