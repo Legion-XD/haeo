@@ -14,7 +14,6 @@ Usage:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-import hashlib
 import json
 import logging
 from pathlib import Path
@@ -44,6 +43,7 @@ from tests.guides.primitives import (
     screenshot_context,
     verify_setup,
 )
+from tools.guide_hashing import compute_content_hash, compute_page_hash, extract_sources
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -152,26 +152,30 @@ class GuideManifest:
 def extract_guide_blocks(markdown: str) -> list[GuideBlock]:
     """Extract all ```guide and ```guide-setup fenced code blocks from markdown text.
 
-    Returns blocks in document order with their content hashes.
+    Returns blocks in document order with page-scoped content hashes.
     Setup blocks have captures=False and are excluded from manifests.
     """
+    # First pass: extract sources to compute page hash
+    sources = extract_sources(markdown)
+    page_hash = compute_page_hash(sources)
+
+    # Second pass: build blocks with page-scoped content hashes
     blocks: list[GuideBlock] = []
     for i, match in enumerate(_GUIDE_BLOCK_RE.finditer(markdown)):
         source = match.group("source")
         is_setup = match.group("setup") is not None
-        content_hash = hashlib.sha256(source.strip().encode()).hexdigest()[:16]
+        content_hash = compute_content_hash(page_hash, source)
         blocks.append(GuideBlock(index=i, source=source, content_hash=content_hash, captures=not is_setup))
     return blocks
 
 
-def compute_page_hash(blocks: list[GuideBlock]) -> str:
+def get_page_hash(blocks: list[GuideBlock]) -> str:
     """Compute a combined hash of all block sources for cache invalidation.
 
     Includes both setup and guide blocks since changes to either
     should invalidate the cache.
     """
-    combined = "\n---\n".join(b.source for b in blocks)
-    return hashlib.sha256(combined.encode()).hexdigest()[:16]
+    return compute_page_hash([b.source for b in blocks])
 
 
 def _run_guide_silently(page: HAPage, guide_name: str) -> None:
@@ -325,7 +329,7 @@ def run_guide_from_markdown(
         _LOGGER.warning("No guide blocks found in %s", markdown_path)
         return GuideManifest(page_hash="empty", viewport={"width": 1280, "height": 800}, blocks=[])
 
-    page_hash = compute_page_hash(blocks)
+    page_hash = get_page_hash(blocks)
     output_dir = output_dir_for_guide(markdown_path)
     manifest_path = output_dir / "manifest.json"
 

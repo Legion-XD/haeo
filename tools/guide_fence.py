@@ -18,32 +18,29 @@ providing visual continuity between slideshows.
 
 from __future__ import annotations
 
-import hashlib
 import json
 import logging
 from pathlib import Path
 from xml.sax.saxutils import escape
 
+from tools.guide_hashing import compute_content_hash, compute_page_hash, extract_sources
+
 _LOGGER = logging.getLogger(__name__)
 
 _DOCS_DIR = Path(__file__).parent.parent / "docs"
 
-_manifest_cache: dict[str, list[dict[str, object]]] | None = None
+_manifest_cache: dict[str, dict[str, object]] | None = None
 _manifest_mtimes: dict[Path, float] = {}
 
 
-def _load_manifests() -> dict[str, list[dict[str, object]]]:
+def _load_manifests() -> dict[str, dict[str, object]]:
     """Scan docs/ for manifest.json files and index blocks by content hash.
 
     Enriches each block with ``_prev_last_screenshot`` — the last screenshot
     filename from the preceding block in the same page manifest, and
     ``_viewport`` — the screenshot viewport dimensions from the manifest.
-
-    When the same content hash appears in multiple manifests (e.g.,
-    ``verify_setup(page)`` shared across guides), all matching blocks
-    are stored so the renderer can pick the correct one per page.
     """
-    index: dict[str, list[dict[str, object]]] = {}
+    index: dict[str, dict[str, object]] = {}
 
     for manifest_path in _DOCS_DIR.rglob("manifest.json"):
         try:
@@ -55,11 +52,8 @@ def _load_manifests() -> dict[str, list[dict[str, object]]]:
 
         _manifest_mtimes[manifest_path] = manifest_path.stat().st_mtime
 
-        page_hash: str = data.get("page_hash", "")
         viewport = data.get("viewport", {"width": 1280, "height": 800})
         blocks = data.get("blocks", [])
-        # Collect all content hashes in this manifest for page identification
-        page_hashes = {b["content_hash"] for b in blocks if isinstance(b, dict) and "content_hash" in b}
         for i, block in enumerate(blocks):
             if not isinstance(block, dict) or "content_hash" not in block:
                 continue
@@ -74,14 +68,17 @@ def _load_manifests() -> dict[str, list[dict[str, object]]]:
 
             block["_prev_last_screenshot"] = prev_last
             block["_viewport"] = viewport
-            block["_page_hash"] = page_hash
-            block["_page_hashes"] = page_hashes
 
             content_hash = block["content_hash"]
-            index.setdefault(content_hash, []).append(block)
+            if content_hash in index:
+                _LOGGER.warning(
+                    "Duplicate guide block hash %s in %s",
+                    content_hash,
+                    manifest_path,
+                )
+            index[content_hash] = block
 
-    total = sum(len(v) for v in index.values())
-    _LOGGER.debug("Loaded %d guide blocks from manifests", total)
+    _LOGGER.debug("Loaded %d guide blocks from manifests", len(index))
     return index
 
 
@@ -96,27 +93,33 @@ def _manifests_changed() -> bool:
     return any(p.stat().st_mtime != _manifest_mtimes[p] for p in current_paths if p.exists())
 
 
-def _find_block(source: str, page_hash: str | None = None) -> dict[str, object] | None:
-    """Find the manifest block matching this source code by content hash.
+def _get_page_hash(md: object) -> str:
+    """Get or compute the page hash for this Markdown processor instance.
 
-    When the same code block appears in multiple guides, ``page_hash``
-    disambiguates by selecting the block from the matching manifest.
+    Each page gets a fresh ``Markdown`` instance. On first call, the
+    page hash is computed from all guide block sources in ``md.lines``
+    and cached on the instance for subsequent blocks on the same page.
     """
+    cached: str | None = getattr(md, "_guide_page_hash", None)
+    if cached is not None:
+        return cached
+
+    lines: list[str] = getattr(md, "lines", [])
+    markdown = "\n".join(lines)
+    sources = extract_sources(markdown)
+    page_hash = compute_page_hash(sources)
+
+    md._guide_page_hash = page_hash  # type: ignore[attr-defined]  # noqa: SLF001
+    return page_hash
+
+
+def _find_block(source: str, page_hash: str) -> dict[str, object] | None:
+    """Find the manifest block matching this source code by content hash."""
     global _manifest_cache  # noqa: PLW0603
     if _manifest_cache is None or _manifests_changed():
         _manifest_cache = _load_manifests()
-    content_hash = hashlib.sha256(source.strip().encode()).hexdigest()[:16]
-    blocks = _manifest_cache.get(content_hash)
-    if not blocks:
-        return None
-    if len(blocks) == 1:
-        return blocks[0]
-    # Disambiguate: prefer the block whose page matches
-    if page_hash:
-        for block in blocks:
-            if block.get("_page_hash") == page_hash:
-                return block
-    return blocks[0]
+    content_hash = compute_content_hash(page_hash, source)
+    return _manifest_cache.get(content_hash)
 
 
 def _screenshot_label(filename: str) -> str:
@@ -222,21 +225,6 @@ def _render_placeholder(source: str, message: str) -> str:
     )
 
 
-def _get_page_hash(md: object) -> str | None:
-    """Get the identified page hash for this Markdown processor instance.
-
-    Each page gets a fresh ``Markdown`` instance. We attach
-    ``_guide_page_hash`` to it on first unambiguous block to
-    disambiguate shared blocks (like ``verify_setup``) across guides.
-    """
-    return getattr(md, "_guide_page_hash", None)
-
-
-def _set_page_hash(md: object, page_hash: str) -> None:
-    """Record the page hash on the Markdown processor instance."""
-    md._guide_page_hash = page_hash  # type: ignore[attr-defined]  # noqa: SLF001
-
-
 def format_guide(
     source: str,
     _language: str,
@@ -262,24 +250,8 @@ def format_guide(
         HTML string to replace the fenced block.
 
     """
-    # Ensure manifests are loaded
-    global _manifest_cache  # noqa: PLW0603
-    if _manifest_cache is None or _manifests_changed():
-        _manifest_cache = _load_manifests()
-
     page_hash = _get_page_hash(_md)
-
-    # Identify the page from the first unambiguous block
-    if page_hash is None:
-        content_hash = hashlib.sha256(source.strip().encode()).hexdigest()[:16]
-        blocks = _manifest_cache.get(content_hash, [])
-        if len(blocks) == 1:
-            found_hash = blocks[0].get("_page_hash")
-            if isinstance(found_hash, str):
-                page_hash = found_hash
-                _set_page_hash(_md, page_hash)
-
-    block = _find_block(source, page_hash if isinstance(page_hash, str) else None)
+    block = _find_block(source, page_hash)
 
     if block is None:
         return _render_placeholder(source, "Run guide tests to generate screenshots")

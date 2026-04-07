@@ -25,8 +25,8 @@ from tools.guide_runner import (
     INPUTS_FILE,
     BlockResult,
     GuideManifest,
-    compute_page_hash,
     extract_guide_blocks,
+    get_page_hash,
     output_dir_for_guide,
     run_blocks_for_mode,
 )
@@ -91,7 +91,7 @@ def test_guide(guide_md: Path, dark_mode: bool) -> None:
             for i, block in enumerate(capturing_blocks)
         ]
         manifest = GuideManifest(
-            page_hash=compute_page_hash(blocks),
+            page_hash=get_page_hash(blocks),
             viewport={"width": 1280, "height": 800},
             blocks=block_results,
         )
