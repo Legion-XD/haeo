@@ -873,10 +873,16 @@ class HAPage:
             if not all_day_toggle.is_visible(timeout=500):
                 all_day_toggle = dialog.locator("label").filter(has_text="All day")
             if all_day_toggle.is_visible(timeout=1000):
-                if ctx:
-                    self._capture_with_indicator("all_day_toggle", all_day_toggle)
-                all_day_toggle.click()
-                self.page.wait_for_timeout(500)
+                # Check if the toggle is currently ON by inspecting the switch state
+                switch = all_day_toggle.locator("ha-switch")
+                is_checked = switch.evaluate(
+                    "(el) => el.checked === true"
+                ) if switch.is_visible(timeout=500) else False
+                if is_checked:
+                    if ctx:
+                        self._capture_with_indicator("all_day_toggle", all_day_toggle)
+                    all_day_toggle.click()
+                    self.page.wait_for_timeout(500)
 
         # HA uses ha-time-input components with separate hh/mm/AM-PM fields.
         # Set values via the component's value property and fire change events.

@@ -565,7 +565,7 @@ def add_ev(
     odometer: EntityInput,
     odometer_at_disconnect: EntityInput,
     capacity: EntityInput | ConstantInput,
-    energy_per_distance: ConstantInput,
+    energy_per_distance: EntityInput | ConstantInput,
     current_soc: EntityInput,
     max_charge_rate: EntityInput | ConstantInput,
     max_discharge_rate: EntityInput | ConstantInput | None = None,

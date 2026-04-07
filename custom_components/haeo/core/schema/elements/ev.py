@@ -67,7 +67,7 @@ class VehicleConfig(TypedDict):
     """Vehicle details configuration."""
 
     capacity: EntityValue | ConstantValue
-    energy_per_distance: ConstantValue
+    energy_per_distance: EntityValue | ConstantValue
     current_soc: EntityValue
 
 

@@ -8,20 +8,20 @@ It covers setting up a trip calendar using the Local Calendar integration, creat
 After completing this walkthrough, your system will include:
 
 - **Base system**: Inverter, battery, solar, grid, and load (from the [Sigenergy System](sigenergy-system.md) guide)
-- **EV**: 60 kWh battery, 7.4 kW max charge, weekday commute schedule
+- **EV**: 60 kWh battery, 25 kW DC charge via Sigenergy charger, weekday commute schedule
 
 ```mermaid
 graph LR
     subgraph DC Side
         Battery[Battery<br/>32kWh] <--> Inverter
         Solar[Solar<br/>27kW] --> Inverter
+        Inverter <--> EV[EV<br/>60kWh<br/>25kW DC]
     end
 
     subgraph AC Side
         Inverter[Inverter<br/>30kW] <--> Switchboard[Switchboard]
         Grid[Grid<br/>±55kW/±30kW] <--> Switchboard
         Switchboard --> Load[Load<br/>1kW]
-        Switchboard <--> EV[EV<br/>60kWh]
     end
 ```
 
@@ -96,13 +96,13 @@ page.navigate_to_integration("HAEO")
 ## Step 4: Add EV Element
 
 Configure the EV with battery details, charging rate, and trip calendar.
-The EV connects to the **Switchboard** since the charger is on the AC side.
+The EV connects to the **Inverter** since the Sigenergy 25 kW charger operates on the DC side.
 
 ```guide
 add_ev(
     page,
     name="Commuter EV",
-    connection="Switchboard",
+    connection="Inverter",
     calendar_entity=EntityInput("ev trips", "EV Trips"),
     connected=EntityInput("charger connected", "EV Charger Connected"),
     odometer=EntityInput("odometer", "EV Odometer"),
@@ -110,7 +110,7 @@ add_ev(
     capacity=ConstantInput(60),
     energy_per_distance=ConstantInput(0.15),
     current_soc=EntityInput("battery state of charge", "EV Battery State of Charge"),
-    max_charge_rate=ConstantInput(7.4),
+    max_charge_rate=ConstantInput(25),
 )
 ```
 
