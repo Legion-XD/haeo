@@ -868,8 +868,10 @@ class HAPage:
         """Fill start and end times in the event dialog.
 
         HA's event dialog defaults to all-day events. We need to
-        uncheck the all-day toggle to reveal time fields, then set
-        times via ha-time-input components.
+        uncheck the all-day toggle to reveal time fields, then fill
+        the hour, minute, and AM/PM fields by clicking into them.
+
+        Times are specified in 24-hour format (e.g. "08:00", "17:30").
         """
         ctx = ScreenshotContext.current()
 
@@ -890,28 +892,83 @@ class HAPage:
                     all_day_toggle.click()
                     self.page.wait_for_timeout(500)
 
-        # HA uses ha-time-input components with separate hh/mm/AM-PM fields.
-        # Set values via the component's value property and fire change events.
         time_inputs = dialog.locator("ha-time-input")
 
-        set_time_js = (
-            "(el, val) => {"
-            " el.value = val;"
-            " el.dispatchEvent(new Event('change', {bubbles: true}));"
-            " el.dispatchEvent(new CustomEvent('value-changed',"
-            " {detail: {value: val}, bubbles: true}));"
-            " }"
-        )
-
         if start_time and time_inputs.count() >= 1:
-            start_input = time_inputs.first
-            start_input.evaluate(set_time_js, start_time)
-            self.page.wait_for_timeout(300)
+            self._fill_single_time(time_inputs.first, start_time, "start_time")
 
         if end_time and time_inputs.count() >= 2:
-            end_input = time_inputs.nth(1)
-            end_input.evaluate(set_time_js, end_time)
-            self.page.wait_for_timeout(300)
+            self._fill_single_time(time_inputs.nth(1), end_time, "end_time")
+
+    def _fill_single_time(
+        self,
+        time_input: Any,
+        time_value: str,
+        screenshot_prefix: str,
+    ) -> None:
+        """Fill a single ha-time-input by clicking into hh/mm fields and setting AM/PM.
+
+        Args:
+            time_input: The ha-time-input locator.
+            time_value: Time in 24-hour format (e.g. "08:00", "17:30").
+            screenshot_prefix: Name prefix for screenshots.
+
+        """
+        ctx = ScreenshotContext.current()
+        hour_24, minute = (int(p) for p in time_value.split(":"))
+
+        # Convert 24h to 12h format
+        if hour_24 == 0:
+            hour_12, period = 12, "AM"
+        elif hour_24 < 12:
+            hour_12, period = hour_24, "AM"
+        elif hour_24 == 12:
+            hour_12, period = 12, "PM"
+        else:
+            hour_12, period = hour_24 - 12, "PM"
+
+        # HA's ha-time-input renders input fields inside shadow DOM.
+        hour_field = time_input.locator("input").first
+        minute_field = time_input.locator("input").nth(1)
+
+        # Set AM/PM first to avoid HA auto-adjusting end time
+        # when the period changes mid-edit.
+        period_select = time_input.locator("ha-select, select, [role='listbox']").first
+        if not period_select.is_visible(timeout=500):
+            period_select = time_input.locator("mwc-select").first
+        if period_select.is_visible(timeout=500):
+            # Check current period by reading the selected value attribute
+            current_period = period_select.evaluate(
+                "(el) => el.value || el.textContent.trim().split('\\n')[0].trim()"
+            )
+            if current_period != period:
+                period_select.click()
+                option = self.page.get_by_role("option", name=period)
+                if not option.is_visible(timeout=1000):
+                    option = self.page.locator(f"mwc-list-item:text('{period}')").first
+                option.wait_for(state="visible", timeout=DEFAULT_TIMEOUT)
+                if ctx:
+                    self._capture_with_indicator(
+                        f"{screenshot_prefix}_period", option
+                    )
+                option.click()
+                self.page.wait_for_timeout(300)
+
+        # Fill hour
+        if hour_field.is_visible(timeout=1000):
+            hour_field.click()
+            hour_field.fill(str(hour_12))
+            self.page.wait_for_timeout(200)
+            if ctx:
+                self._capture_with_indicator(f"{screenshot_prefix}_hour", hour_field)
+
+        # Fill minute
+        if minute_field.is_visible(timeout=1000):
+            minute_field.click()
+            minute_field.fill(f"{minute:02d}")
+            self.page.wait_for_timeout(200)
+            if ctx:
+                self._capture_with_indicator(f"{screenshot_prefix}_minute", minute_field)
 
     def _set_event_recurrence(self, dialog: Any, recurrence: str) -> None:
         """Set event recurrence in the event dialog.
