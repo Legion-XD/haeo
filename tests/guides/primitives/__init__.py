@@ -17,7 +17,7 @@ Example usage:
         # ctx.screenshots contains OrderedDict of all captured images
 """
 
-from tests.guides.primitives.capture import ScreenshotContext, guide_step, screenshot_context
+from tests.guides.primitives.capture import ScreenshotContext, guide_step, pause_screenshots, screenshot_context
 from tests.guides.primitives.ha_page import HAPage
 from tests.guides.primitives.haeo import (
     ConstantInput,
@@ -28,8 +28,10 @@ from tests.guides.primitives.haeo import (
     add_integration,
     add_inverter,
     add_load,
+    add_local_calendar,
     add_node,
     add_solar,
+    create_calendar_event,
     login,
     verify_setup,
 )
@@ -49,10 +51,13 @@ __all__ = [
     "add_integration",
     "add_inverter",
     "add_load",
+    "add_local_calendar",
     "add_node",
     "add_solar",
+    "create_calendar_event",
     "guide_step",
     "login",
+    "pause_screenshots",
     "screenshot_context",
     "verify_setup",
 ]

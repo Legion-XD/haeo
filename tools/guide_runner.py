@@ -35,9 +35,12 @@ from tests.guides.primitives import (
     add_integration,
     add_inverter,
     add_load,
+    add_local_calendar,
     add_node,
     add_solar,
+    create_calendar_event,
     login,
+    pause_screenshots,
     screenshot_context,
     verify_setup,
 )
@@ -49,9 +52,9 @@ PROJECT_ROOT = Path(__file__).parent.parent
 DOCS_DIR = PROJECT_ROOT / "docs"
 INPUTS_FILE = PROJECT_ROOT / "tests" / "scenarios" / "scenario1" / "inputs.json"
 
-# Regex to extract ```guide blocks from markdown
+# Regex to extract ```guide and ```guide-setup blocks from markdown
 _GUIDE_BLOCK_RE = re.compile(
-    r"^```guide\s*\n(.*?)^```\s*$",
+    r"^```guide(?P<setup>-setup)?\s*\n(?P<source>.*?)^```\s*$",
     re.MULTILINE | re.DOTALL,
 )
 
@@ -64,12 +67,14 @@ class GuideBlock:
         index: Zero-based position of this block in the page.
         source: The Python source code inside the fenced block.
         content_hash: SHA-256 hex digest of the source code.
+        captures: Whether this block captures screenshots (False for guide-setup).
 
     """
 
     index: int
     source: str
     content_hash: str
+    captures: bool = True
 
 
 @dataclass
@@ -145,22 +150,49 @@ class GuideManifest:
 
 
 def extract_guide_blocks(markdown: str) -> list[GuideBlock]:
-    """Extract all ```guide fenced code blocks from markdown text.
+    """Extract all ```guide and ```guide-setup fenced code blocks from markdown text.
 
     Returns blocks in document order with their content hashes.
+    Setup blocks have captures=False and are excluded from manifests.
     """
     blocks: list[GuideBlock] = []
     for i, match in enumerate(_GUIDE_BLOCK_RE.finditer(markdown)):
-        source = match.group(1)
+        source = match.group("source")
+        is_setup = match.group("setup") is not None
         content_hash = hashlib.sha256(source.strip().encode()).hexdigest()[:16]
-        blocks.append(GuideBlock(index=i, source=source, content_hash=content_hash))
+        blocks.append(GuideBlock(index=i, source=source, content_hash=content_hash, captures=not is_setup))
     return blocks
 
 
 def compute_page_hash(blocks: list[GuideBlock]) -> str:
-    """Compute a combined hash of all block sources for cache invalidation."""
+    """Compute a combined hash of all block sources for cache invalidation.
+
+    Includes both setup and guide blocks since changes to either
+    should invalidate the cache.
+    """
     combined = "\n---\n".join(b.source for b in blocks)
     return hashlib.sha256(combined.encode()).hexdigest()[:16]
+
+
+def _run_guide_silently(page: HAPage, guide_name: str) -> None:
+    """Execute all guide blocks from another walkthrough without screenshots.
+
+    Loads the referenced guide's markdown, extracts its guide blocks
+    (excluding any guide-setup blocks to avoid recursive prerequisites),
+    and executes them in a fresh namespace sharing the same page.
+    """
+    guide_path = DOCS_DIR / "walkthroughs" / f"{guide_name}.md"
+    if not guide_path.exists():
+        msg = f"Prerequisite guide not found: {guide_path}"
+        raise FileNotFoundError(msg)
+
+    markdown = guide_path.read_text(encoding="utf-8")
+    ref_blocks = extract_guide_blocks(markdown)
+
+    namespace = build_exec_namespace(page)
+    for block in ref_blocks:
+        if block.captures:
+            exec(compile(block.source, f"<{guide_name} block {block.index}>", "exec"), namespace)  # noqa: S102
 
 
 def build_exec_namespace(page: HAPage) -> dict[str, object]:
@@ -180,7 +212,11 @@ def build_exec_namespace(page: HAPage) -> dict[str, object]:
         "add_grid": add_grid,
         "add_load": add_load,
         "add_node": add_node,
+        "add_local_calendar": add_local_calendar,
+        "create_calendar_event": create_calendar_event,
         "verify_setup": verify_setup,
+        # Guide chaining
+        "run_guide": lambda guide_name: _run_guide_silently(page, guide_name),
     }
 
 
@@ -233,6 +269,12 @@ def run_blocks_for_mode(
                 per_block: list[list[str]] = []
 
                 for block in blocks:
+                    if not block.captures:
+                        # Setup blocks run without screenshot capture
+                        with pause_screenshots():
+                            exec(compile(block.source, f"<guide-setup block {block.index}>", "exec"), namespace)  # noqa: S102
+                        continue
+
                     # Record screenshots before this block
                     before_count = len(ctx.screenshots)
 
@@ -319,14 +361,15 @@ def run_guide_from_markdown(
             msg = f"Block {i} screenshot mismatch between light and dark modes: light={light_names}, dark={dark_names}"
             raise RuntimeError(msg)
 
-    # Build manifest (both modes produce identical filenames)
+    # Build manifest from capturing blocks only (setup blocks are excluded)
+    capturing_blocks = [b for b in blocks if b.captures]
     block_results = [
         BlockResult(
             index=block.index,
             content_hash=block.content_hash,
             screenshots=light_results[i],
         )
-        for i, block in enumerate(blocks)
+        for i, block in enumerate(capturing_blocks)
     ]
 
     manifest = GuideManifest(page_hash=page_hash, viewport=viewport, blocks=block_results)

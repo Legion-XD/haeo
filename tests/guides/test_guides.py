@@ -81,13 +81,14 @@ def test_guide(guide_md: Path, dark_mode: bool) -> None:
     # Only write the manifest from the light mode run to avoid
     # the dark mode pass overwriting it with potentially different data.
     if not dark_mode:
+        capturing_blocks = [b for b in blocks if b.captures]
         block_results = [
             BlockResult(
                 index=block.index,
                 content_hash=block.content_hash,
                 screenshots=screenshots_per_block[i],
             )
-            for i, block in enumerate(blocks)
+            for i, block in enumerate(capturing_blocks)
         ]
         manifest = GuideManifest(
             page_hash=compute_page_hash(blocks),

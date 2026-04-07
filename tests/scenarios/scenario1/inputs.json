@@ -4647,7 +4647,6 @@
     "attributes": { "device_class": "energy", "friendly_name": "Sigen Plant Rated Energy Capacity", "state_class": "total", "unit_of_measurement": "kWh" }
   },
   { "entity_id": "binary_sensor.ev_charger_connected", "state": "on", "last_changed": "2025-10-05T06:00:00+00:00", "last_reported": "2025-10-05T06:00:00+00:00", "last_updated": "2025-10-05T06:00:00+00:00", "context": { "id": "ev_connected_ctx", "parent_id": null, "user_id": null }, "attributes": { "device_class": "connectivity", "friendly_name": "EV Charger Connected" } },
-  { "entity_id": "calendar.ev_trips", "state": "off", "last_changed": "2025-10-05T06:00:00+00:00", "last_reported": "2025-10-05T06:00:00+00:00", "last_updated": "2025-10-05T06:00:00+00:00", "context": { "id": "ev_calendar_ctx", "parent_id": null, "user_id": null }, "attributes": { "friendly_name": "EV Trip Calendar" } },
   {
     "entity_id": "sensor.ev_battery_soc",
     "state": "72",

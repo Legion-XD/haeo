@@ -221,3 +221,19 @@ def format_guide(
         return _render_placeholder(source, "Run guide tests to generate screenshots")
 
     return _render_slideshow(block, source)
+
+
+def format_guide_setup(
+    _source: str,
+    _language: str,
+    _class_name: str,
+    _options: dict[str, str],
+    _md: object,
+    **_kwargs: object,
+) -> str:
+    """Format a ```guide-setup fence block as hidden content.
+
+    Setup blocks run prerequisite guide steps during test execution
+    but are not rendered in the documentation output.
+    """
+    return ""

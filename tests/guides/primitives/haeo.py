@@ -505,6 +505,56 @@ def add_node(page: HAPage, *, name: str) -> None:
 
 
 @guide_step
+def add_local_calendar(page: HAPage, *, calendar_name: str) -> None:
+    """Add Local Calendar integration to Home Assistant.
+
+    Navigates to integrations, adds the Local Calendar integration,
+    and configures it with the given calendar name.
+    """
+    _LOGGER.info("Adding Local Calendar: %s", calendar_name)
+
+    page.navigate_to_settings()
+    page.navigate_to_integrations()
+    page.click_add_integration()
+    page.search_integration("Local calendar")
+
+    page.wait_for_dialog("Local calendar")
+    page.fill_textbox("Calendar name", calendar_name)
+    page.submit()
+
+    page.close_success_dialog()
+
+    _LOGGER.info("Local Calendar added: %s", calendar_name)
+
+
+@guide_step
+def create_calendar_event(
+    page: HAPage,
+    *,
+    title: str,
+    start_time: str | None = None,
+    end_time: str | None = None,
+    recurrence: str | None = None,
+) -> None:
+    """Create a calendar event via the HA calendar UI.
+
+    Navigates to the Calendar page, creates an event with the given
+    details, and captures screenshots of the process.
+    """
+    _LOGGER.info("Creating calendar event: %s", title)
+
+    page.navigate_to_calendar()
+    page.create_calendar_event(
+        title=title,
+        start_time=start_time,
+        end_time=end_time,
+        recurrence=recurrence,
+    )
+
+    _LOGGER.info("Calendar event created: %s", title)
+
+
+@guide_step
 def add_ev(
     page: HAPage,
     *,
