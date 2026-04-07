@@ -827,8 +827,14 @@ class HAPage:
                 ).first
                 if not save_btn.is_visible(timeout=1000):
                     save_btn = dialog.get_by_text("Add event").last
-                self._scroll_into_view(save_btn)
-                self._capture_with_indicator("save_button", save_btn)
+                # Use the inner button for proper border-radius highlighting
+                inner_btn = save_btn.locator("button").first
+                if inner_btn.is_visible(timeout=500):
+                    self._scroll_into_view(inner_btn)
+                    self._capture_with_indicator("save_button", inner_btn)
+                else:
+                    self._scroll_into_view(save_btn)
+                    self._capture_with_indicator("save_button", save_btn)
                 save_btn.click()
                 dialog.wait_for(state="hidden", timeout=SEARCH_TIMEOUT)
                 self.page.wait_for_timeout(500)
@@ -906,9 +912,6 @@ class HAPage:
             end_input = time_inputs.nth(1)
             end_input.evaluate(set_time_js, end_time)
             self.page.wait_for_timeout(300)
-
-        if ctx and (start_time or end_time):
-            self._capture("times_set")
 
     def _set_event_recurrence(self, dialog: Any, recurrence: str) -> None:
         """Set event recurrence in the event dialog.
