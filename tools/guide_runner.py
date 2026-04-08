@@ -184,6 +184,10 @@ def _run_guide_silently(page: HAPage, guide_name: str) -> None:
     Loads the referenced guide's markdown, extracts its guide blocks
     (excluding any guide-setup blocks to avoid recursive prerequisites),
     and executes them in a fresh namespace sharing the same page.
+
+    Wraps execution in pause_screenshots() so that even if called from
+    a capturing guide block, the prerequisite's actions don't produce
+    screenshots attributed to the caller.
     """
     guide_path = DOCS_DIR / "walkthroughs" / f"{guide_name}.md"
     if not guide_path.exists():
@@ -194,9 +198,10 @@ def _run_guide_silently(page: HAPage, guide_name: str) -> None:
     ref_blocks = extract_guide_blocks(markdown)
 
     namespace = build_exec_namespace(page)
-    for block in ref_blocks:
-        if block.captures:
-            exec(compile(block.source, f"<{guide_name} block {block.index}>", "exec"), namespace)  # noqa: S102
+    with pause_screenshots():
+        for block in ref_blocks:
+            if block.captures:
+                exec(compile(block.source, f"<{guide_name} block {block.index}>", "exec"), namespace)  # noqa: S102
 
 
 def build_exec_namespace(page: HAPage) -> dict[str, object]:

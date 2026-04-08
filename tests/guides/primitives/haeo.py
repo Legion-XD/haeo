@@ -532,6 +532,7 @@ def create_calendar_event(
     page: HAPage,
     *,
     title: str,
+    location: str | None = None,
     start_time: str | None = None,
     end_time: str | None = None,
     recurrence: str | None = None,
@@ -546,6 +547,7 @@ def create_calendar_event(
     page.navigate_to_calendar()
     page.create_calendar_event(
         title=title,
+        location=location,
         start_time=start_time,
         end_time=end_time,
         recurrence=recurrence,

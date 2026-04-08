@@ -82,18 +82,18 @@ class VehicleData(TypedDict):
 # --- Charging section ---
 
 
-class ChargingConfig(TypedDict, total=False):
+class ChargingConfig(TypedDict):
     """Charging rate configuration."""
 
     max_charge_rate: EntityValue | ConstantValue
-    max_discharge_rate: EntityValue | ConstantValue | NoneValue
+    max_discharge_rate: NotRequired[EntityValue | ConstantValue | NoneValue]
 
 
-class ChargingData(TypedDict, total=False):
+class ChargingData(TypedDict):
     """Loaded charging rate values."""
 
     max_charge_rate: NDArray[np.floating[Any]] | float
-    max_discharge_rate: NDArray[np.floating[Any]] | float
+    max_discharge_rate: NotRequired[NDArray[np.floating[Any]] | float]
 
 
 # --- Trip section (entity selectors, handled manually in config flow) ---

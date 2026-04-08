@@ -109,8 +109,8 @@ class EvAdapter:
         initial_soc = vehicle[CONF_CURRENT_SOC] / 100.0
         initial_charge = initial_soc * capacity_first
 
-        max_charge = charging.get(CONF_MAX_CHARGE_RATE)
-        max_discharge = charging.get(CONF_MAX_DISCHARGE_RATE)
+        max_charge = charging[CONF_MAX_CHARGE_RATE]
+        max_discharge = charging.get(CONF_MAX_DISCHARGE_RATE, 0.0)
 
         # Calendar data will populate these via TrackedParam updates from the coordinator
         connected_flag: NDArray[np.floating[Any]] | None = None

@@ -64,12 +64,13 @@ The Local Calendar integration creates a calendar entity (`calendar.ev_trips`) t
 ## Step 2: Create Trip Events
 
 Navigate to the **Calendar** page and add a recurring event for your commute.
-Include the round-trip distance in the event title so HAEO can calculate energy requirements.
+Include the round-trip distance in the event location so HAEO can calculate energy requirements.
 
 ```guide
 create_calendar_event(
     page,
-    title="Work commute 50km",
+    title="Work commute",
+    location="50km",
     start_time="08:00",
     end_time="17:30",
     recurrence="Weekly",
@@ -78,8 +79,8 @@ create_calendar_event(
 
 !!! tip "How HAEO Reads Trip Events"
 
-    HAEO parses distances from event titles automatically — include a number followed by "km" or "mi".
-    For example, "Work commute 50km" tells HAEO the round trip uses 50 km worth of energy.
+    HAEO parses distances from event locations automatically — include a number followed by "km" or "mi".
+    For example, a location of "50km" tells HAEO the round trip uses 50 km worth of energy.
 
     Each event represents a period when the car will be **away from home** and cannot charge from your system.
 

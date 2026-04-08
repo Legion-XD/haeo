@@ -765,6 +765,7 @@ class HAPage:
         self,
         *,
         title: str,
+        location: str | None = None,
         start_time: str | None = None,
         end_time: str | None = None,
         recurrence: str | None = None,
@@ -776,6 +777,7 @@ class HAPage:
 
         Args:
             title: Event title/summary.
+            location: Event location (optional).
             start_time: Start time in HH:MM format (optional).
             end_time: End time in HH:MM format (optional).
             recurrence: Recurrence rule label (e.g., "Weekly") or None.
@@ -811,6 +813,13 @@ class HAPage:
                 title_input.fill(title)
                 self._capture("title_filled")
 
+                if location:
+                    location_input = dialog.get_by_role("textbox", name="Location")
+                    location_input.wait_for(state="visible", timeout=DEFAULT_TIMEOUT)
+                    self._capture_with_indicator("location_field", location_input)
+                    location_input.fill(location)
+                    self._capture("location_filled")
+
                 self._fill_event_times(dialog, start_time, end_time)
 
                 if recurrence:
@@ -840,6 +849,9 @@ class HAPage:
             if not title_input.is_visible(timeout=1000):
                 title_input = dialog.get_by_role("textbox").first
             title_input.fill(title)
+            if location:
+                location_input = dialog.get_by_role("textbox", name="Location")
+                location_input.fill(location)
             self._fill_event_times(dialog, start_time, end_time)
             if recurrence:
                 self._set_event_recurrence(dialog, recurrence)

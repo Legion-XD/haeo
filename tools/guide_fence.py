@@ -41,6 +41,7 @@ def _load_manifests() -> dict[str, dict[str, object]]:
     ``_viewport`` — the screenshot viewport dimensions from the manifest.
     """
     index: dict[str, dict[str, object]] = {}
+    _manifest_mtimes.clear()
 
     for manifest_path in _DOCS_DIR.rglob("manifest.json"):
         try:
